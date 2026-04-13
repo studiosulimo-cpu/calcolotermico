@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Energy Tool CT 3.0</title>
+<script src="app.js" defer></script>
+
+<style>
+body { font-family: Arial; margin: 30px; background:#f4f6f8;}
+.box { background:white; padding:20px; margin-bottom:20px; border-radius:8px;}
+input, select { padding:6px; margin:5px;}
+button { padding:10px 20px; font-size:16px; cursor:pointer;}
+h2 { margin-bottom: 20px; }
+</style>
+
+</head>
+<body>
+
+<h2>⚡ Energy Tool – Conto Termico PDC</h2>
+
+<div class="box">
+<h3>Dati impianto</h3>
+
+<label>Potenza PDC (kW)</label><br>
+<input id="potenza" type="number"><br>
+
+<label>COP medio</label><br>
+<input id="cop" type="number" value="3.5"><br>
+
+<label>Zona climatica</label><br>
+<select id="zona">
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+<option value="F">F</option>
+</select><br>
+
+<label>Ore annue funzionamento</label><br>
+<input id="ore" type="number" value="1200"><br>
+
+</div>
+
+<div class="box">
+<h3>Consumi edificio</h3>
+
+<label>Consumo gas (kWh)</label><br>
+<input id="gas" type="number"><br>
+
+<label>Costo gas (€/kWh)</label><br>
+<input id="cgas" type="number" step="0.01" value="0.10"><br>
+
+<label>Costo elettrico (€/kWh)</label><br>
+<input id="cele" type="number" step="0.01" value="0.25"><br>
+
+</div>
+
+<button onclick="calcola()">Calcola</button>
+
+<div class="box">
+<h3>Risultati</h3>
+<div id="out">Inserisci i dati e calcola.</div>
+</div>
+
+</body>
+</html>
