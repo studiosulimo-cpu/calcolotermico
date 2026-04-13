@@ -2,72 +2,669 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Energy Tool Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Tool Pro – Analisi Multi Scenario</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="app.js" defer></script>
 
 <style>
-body { font-family: Arial; margin: 30px; background:#f4f6f8;}
-.box { background:white; padding:20px; margin-bottom:20px; border-radius:8px;}
-input, select { padding:6px; margin:5px;}
-button { padding:10px 20px; font-size:16px;}
-.best { background:#d4edda; padding:10px; margin-bottom:10px;}
+/* =====================================================
+   RESET E BASE
+===================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blu:        #1F4E79;
+  --blu2:       #2E75B6;
+  --verde:      #27500A;
+  --verde-bg:   #EAF3DE;
+  --rosso:      #A32D2D;
+  --rosso-bg:   #FCEBEB;
+  --amber:      #BA7517;
+  --amber-bg:   #FAEEDA;
+  --teal:       #0F6E56;
+  --teal-bg:    #E1F5EE;
+  --gray:       #5F5E5A;
+  --gray-bg:    #F1EFE8;
+  --border:     rgba(0,0,0,0.10);
+  --bg:         #f4f6f8;
+  --card-bg:    #ffffff;
+  --text:       #1a1a1a;
+  --text-muted: #666;
+  --radius-md:  6px;
+  --radius-lg:  10px;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* =====================================================
+   LAYOUT
+===================================================== */
+.wrapper { max-width: 880px; margin: 0 auto; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+@media (max-width: 640px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  body { padding: 12px; }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.site-header-left h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--blu);
+}
+.site-header-left p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+#cliente-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* =====================================================
+   TABS
+===================================================== */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+.tab.active {
+  color: var(--blu);
+  border-bottom-color: var(--blu);
+  font-weight: 500;
+}
+.tab:hover:not(.active) {
+  color: var(--text);
+  background: rgba(0,0,0,0.03);
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* =====================================================
+   CARD
+===================================================== */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+.card h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* =====================================================
+   FORM
+===================================================== */
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+label:first-of-type { margin-top: 0; }
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: #fafafa;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--blu2);
+  background: #fff;
+}
+
+/* =====================================================
+   PULSANTI
+===================================================== */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: var(--blu);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  letter-spacing: 0.02em;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--blu2); }
+
+/* =====================================================
+   GRIGLIA CONSUMI MENSILI
+===================================================== */
+.consumi-input {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+@media (max-width: 500px) {
+  .consumi-input { grid-template-columns: repeat(3, 1fr); }
+}
+.mese-col label {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 3px;
+}
+.mese-col input {
+  padding: 5px 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* =====================================================
+   CHART CONSUMI
+===================================================== */
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.leg-item { display: flex; align-items: center; gap: 5px; }
+.leg-sq   { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.chart-wrap { position: relative; width: 100%; }
+
+/* =====================================================
+   NOTE NORMATIVA
+===================================================== */
+.note-norm {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 10px 14px;
+  background: var(--gray-bg);
+  border-radius: var(--radius-md);
+  margin-top: 12px;
+}
+
+/* =====================================================
+   SEPARATORE
+===================================================== */
+.sep { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* =====================================================
+   RISULTATI – BASELINE CARD
+===================================================== */
+.baseline-card {
+  background: #EAF3DE;
+  border-left: 4px solid var(--verde);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.baseline-kpi {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.metric-label { font-size: 11px; color: var(--verde); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.metric-value { font-size: 22px; font-weight: 600; color: var(--text); }
+.metric-value.mid { font-size: 17px; }
+.metric-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* =====================================================
+   RANKING
+===================================================== */
+.ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fafafa;
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+}
+.ranking-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.rk1 { background: var(--verde-bg); color: var(--verde); }
+.rk2 { background: var(--teal-bg);  color: var(--teal); }
+.rk3 { background: var(--amber-bg); color: var(--amber); }
+.ranking-nome { flex: 1; font-size: 13px; font-weight: 500; }
+.ranking-van  { font-size: 13px; font-weight: 600; }
+
+/* =====================================================
+   BADGE
+===================================================== */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+.badge-verde { background: var(--verde-bg); color: var(--verde); }
+.badge-teal  { background: var(--teal-bg);  color: var(--teal); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); }
+.badge-rosso { background: var(--rosso-bg); color: var(--rosso); }
+
+/* =====================================================
+   SCENARIO CARD
+===================================================== */
+.scenario-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.scenario-card.best {
+  border: 2px solid var(--verde);
+}
+.scenario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.scenario-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--blu);
+}
+
+/* KPI row */
+.kpi-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.kpi {
+  flex: 1;
+  min-width: 100px;
+  background: #fafafa;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+.kpi .kl { font-size: 11px; color: var(--text-muted); }
+.kpi .kv { font-size: 18px; font-weight: 600; margin-top: 2px; }
+.kpi .ks { font-size: 11px; color: var(--text-muted); }
+
+/* Dettagli tabellari */
+.detail-rows { }
+.row-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.row-detail:last-child { border-bottom: none; }
+.row-detail .dk { color: var(--text-muted); }
+.row-detail .dv { font-weight: 600; }
+
+/* Payback bar */
+.payback-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #eee;
+  overflow: hidden;
+}
+.payback-fill { height: 100%; border-radius: 3px; }
+
+/* =====================================================
+   GRAFICO BARRE RISULTATI
+===================================================== */
+.chart-card { margin-top: 8px; }
+
+/* =====================================================
+   TOTALI CONSUMI (tab 2)
+===================================================== */
+.row-detail-sm {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.row-detail-sm:last-child { border-bottom: none; }
+.row-detail-sm .dk { color: var(--text-muted); }
+.row-detail-sm .dv { font-weight: 600; }
+
+/* =====================================================
+   FOOTER
+===================================================== */
+.site-footer {
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.7;
+}
 </style>
 </head>
 
 <body>
+<div class="wrapper">
 
-<h2>⚡ Energy Tool – Analisi Multi Scenario</h2>
+<!-- HEADER -->
+<header class="site-header">
+  <div class="site-header-left">
+    <h1>⚡ Energy Tool Pro</h1>
+    <p>Analisi multi-scenario efficienza energetica · Conto Termico GSE · D.M. 16/02/2016</p>
+  </div>
+  <div id="cliente-label"></div>
+</header>
 
-<div class="box">
-<h3>Dati edificio</h3>
+<!-- TAB BAR -->
+<nav class="tabs" role="tablist" aria-label="Sezioni del tool">
+  <button class="tab active" role="tab" onclick="showTab('edificio')">1 · Edificio</button>
+  <button class="tab" role="tab" onclick="showTab('consumi')">2 · Consumi storici</button>
+  <button class="tab" role="tab" onclick="showTab('impianti')">3 · Impianti</button>
+  <button class="tab" role="tab" onclick="showTab('risultati')">4 · Risultati</button>
+</nav>
 
-Superficie (m²)<br>
-<input id="sup"><br>
+<!-- ===================================================
+     TAB 1 – EDIFICIO
+=================================================== -->
+<section id="tab-edificio" class="panel active" role="tabpanel" aria-label="Dati edificio">
 
-Consumo gas (kWh)<br>
-<input id="gas"><br>
+  <div class="grid2">
+    <div class="card">
+      <h3>Anagrafica</h3>
 
-Consumo elettrico (kWh)<br>
-<input id="ele"><br>
+      <label for="nome-cliente">Nome committente / edificio</label>
+      <input id="nome-cliente" type="text" placeholder="es. Condominio Rossi – Via Roma 1"
+             oninput="aggiornaCliente()">
 
-Costo gas €/kWh<br>
-<input id="cgas" value="0.10"><br>
+      <label for="destinazione">Destinazione d'uso</label>
+      <select id="destinazione">
+        <option value="residenziale">Residenziale</option>
+        <option value="terziario">Terziario / commerciale</option>
+        <option value="industriale">Industriale</option>
+        <option value="pubblico">Pubblico / PA</option>
+      </select>
 
-Costo elettrico €/kWh<br>
-<input id="cele" value="0.25"><br>
+      <label for="zona">Zona climatica (D.P.R. 412/1993)</label>
+      <select id="zona">
+        <option value="A">A – Bassa penisola / isole (GG ≤ 600)</option>
+        <option value="B">B (601 – 900 GG)</option>
+        <option value="C">C (901 – 1400 GG)</option>
+        <option value="D" selected>D (1401 – 2100 GG)</option>
+        <option value="E">E – Nord / montagna (2101 – 3000 GG)</option>
+        <option value="F">F – Alta quota (GG &gt; 3000)</option>
+      </select>
 
-Zona climatica<br>
-<select id="zona">
-<option value="A">A</option>
-<option value="B">B</option>
-<option value="C">C</option>
-<option value="D">D</option>
-<option value="E">E</option>
-<option value="F">F</option>
-</select>
+      <label for="gg">Gradi giorno (GG)</label>
+      <input id="gg" type="number" value="2100" placeholder="es. 2100">
+    </div>
 
-</div>
+    <div class="card">
+      <h3>Caratteristiche costruttive</h3>
 
-<div class="box">
-<h3>Impianti</h3>
+      <label for="sup">Superficie utile riscaldata (m²)</label>
+      <input id="sup" type="number" value="500" placeholder="es. 500">
 
-Potenza (kW)<br>
-<input id="potenza"><br>
+      <label for="vol">Volume lordo riscaldato (m³)</label>
+      <input id="vol" type="number" value="1500" placeholder="es. 1500">
 
-COP PDC<br>
-<input id="cop" value="3.5"><br>
+      <label for="anno">Anno di costruzione</label>
+      <input id="anno" type="number" value="1975" placeholder="es. 1975">
 
-Ore annue<br>
-<input id="ore" value="1200"><br>
+      <label for="classe">Classe energetica attuale (APE)</label>
+      <select id="classe">
+        <option value="G">G</option>
+        <option value="F" selected>F</option>
+        <option value="E">E</option>
+        <option value="D">D</option>
+        <option value="C">C</option>
+        <option value="B">B</option>
+        <option value="A">A1 – A4</option>
+      </select>
 
-</div>
+      <label for="eph">Indice EPh attuale (kWh/m²·anno)</label>
+      <input id="eph" type="number" value="180" placeholder="es. 180">
+    </div>
+  </div>
 
-<button onclick="calcola()">Simula scenari</button>
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Sistema impiantistico attuale</h3>
+    <div class="grid3">
+      <div>
+        <label for="gen-attuale">Generatore termico</label>
+        <select id="gen-attuale">
+          <option value="caldaia-vecchia">Caldaia tradizionale (η ≤ 80%)</option>
+          <option value="caldaia-cond">Caldaia condensazione</option>
+          <option value="pdc">Pompa di calore</option>
+          <option value="teleriscaldamento">Teleriscaldamento</option>
+        </select>
+      </div>
+      <div>
+        <label for="vettore">Vettore energetico principale</label>
+        <select id="vettore">
+          <option value="metano">Gas naturale (metano)</option>
+          <option value="gpl">GPL</option>
+          <option value="gasolio">Gasolio</option>
+          <option value="elettrico">Solo elettrico</option>
+        </select>
+      </div>
+      <div>
+        <label for="co2">Emissioni CO₂ stimate (tCO₂/anno)</label>
+        <input id="co2" type="number" placeholder="es. 18 (opzionale)">
+      </div>
+    </div>
+  </div>
 
-<div class="box">
-<h3>Risultati</h3>
-<div id="out"></div>
-</div>
+  <button class="btn-primary" onclick="showTab('consumi')">Avanti → Consumi storici</button>
+</section>
 
+<!-- ===================================================
+     TAB 2 – CONSUMI STORICI
+=================================================== -->
+<section id="tab-consumi" class="panel" role="tabpanel" aria-label="Consumi storici">
+
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Consumi mensili gas (kWh/mese)</h3>
+    <div class="consumi-input" id="consumi-gas-grid"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h3>Consumi mensili elettricità (kWh/mese)</h3>
+    <div class="consumi-input" id="consumi-ele-grid"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Prezzi energia</h3>
+      <label for="cgas">Costo gas (€/kWh)</label>
+      <input id="cgas" type="number" step="0.001" value="0.10" oninput="aggiornaConsumi()">
+      <label for="cele">Costo elettricità (€/kWh)</label>
+      <input id="cele" type="number" step="0.001" value="0.25" oninput="aggiornaConsumi()">
+    </div>
+    <div class="card">
+      <h3>Totali annui (calcolati)</h3>
+      <div class="row-detail-sm"><span class="dk">Gas totale</span><span class="dv" id="tot-gas">—</span></div>
+      <div class="row-detail-sm"><span class="dk">Elettricità totale</span><span class="dv" id="tot-ele">—</span></div>
+      <div class="row-detail-sm"><span class="dk">Spesa gas</span><span class="dv" id="spesa-gas">—</span></div>
+      <div class="row-detail-sm"><span class="dk">Spesa elettrica</span><span class="dv" id="spesa-ele">—</span></div>
+      <div class="row-detail-sm">
+        <span class="dk" style="font-weight:600;">Spesa totale baseline</span>
+        <span class="dv" id="spesa-tot" style="color:var(--blu);">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px; margin-bottom:16px;">
+    <h3>Andamento consumi mensili</h3>
+    <div class="chart-legend">
+      <span class="leg-item">
+        <span class="leg-sq" style="background:#1F4E79;"></span>Gas (kWh)
+      </span>
+      <span class="leg-item">
+        <span class="leg-sq" style="background:#EF9F27; border:1px dashed #BA7517;"></span>Elettricità (kWh)
+      </span>
+    </div>
+    <div class="chart-wrap" style="height:220px;">
+      <canvas id="chartConsumi" role="img"
+        aria-label="Grafico consumi mensili gas ed elettricità in kWh">
+        Dati consumi mensili gas ed elettricità.
+      </canvas>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="showTab('impianti')">Avanti → Parametri impianti</button>
+</section>
+
+<!-- ===================================================
+     TAB 3 – IMPIANTI
+=================================================== -->
+<section id="tab-impianti" class="panel" role="tabpanel" aria-label="Parametri impianti">
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Pompa di calore aria-acqua</h3>
+
+      <label for="potenza">Potenza nominale (kW)</label>
+      <input id="potenza" type="number" value="30" placeholder="es. 30">
+
+      <label for="cop">COP nominale A7W35 (EN 14511) — usato per incentivo CT</label>
+      <input id="cop" type="number" step="0.1" value="3.8">
+
+      <label for="scop">SCOP stagionale stimato — usato per calcolo consumi</label>
+      <input id="scop" type="number" step="0.1" value="3.2">
+
+      <label for="ore">Ore di funzionamento annue</label>
+      <input id="ore" type="number" value="1400">
+
+      <label for="quota-pdc">Quota copertura gas sostituita dalla PDC (%)</label>
+      <input id="quota-pdc" type="number" value="80" min="50" max="100">
+
+      <label for="inv-pdc">Costo installazione PDC (€, lordo)</label>
+      <input id="inv-pdc" type="number" value="30000">
+
+      <p class="note-norm">
+        <strong>Conto Termico (D.M. 16/02/2016):</strong> incentivo calcolato su energia termica
+        prodotta con <em>f<sub>p</sub> = min(COP / 2,5 ; 1,2)</em>, erogato in 5 rate annuali.
+        Requisito minimo: COP ≥ 2,6 (pompe di calore elettriche, All. II, Tab. 3).
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Caldaia a condensazione</h3>
+
+      <label for="eta-cald">Rendimento stagionale η<sub>s</sub> (%)</label>
+      <input id="eta-cald" type="number" value="96" min="85" max="110">
+
+      <label for="inv-cald">Costo installazione (€)</label>
+      <input id="inv-cald" type="number" value="6000">
+
+      <div class="sep"></div>
+
+      <h3>Biomassa (caldaia a pellet)</h3>
+
+      <label for="eta-bio">Rendimento η (%)</label>
+      <input id="eta-bio" type="number" value="88">
+
+      <label for="costo-pellet">Costo pellet (€/kWh termico)</label>
+      <input id="costo-pellet" type="number" step="0.001" value="0.07">
+
+      <label for="inv-bio">Costo installazione (€)</label>
+      <input id="inv-bio" type="number" value="12000">
+
+      <div class="sep"></div>
+
+      <h3>Parametri finanziari</h3>
+
+      <label for="tasso">Tasso di attualizzazione (%)</label>
+      <input id="tasso" type="number" step="0.1" value="5">
+
+      <label for="anni">Orizzonte temporale analisi (anni)</label>
+      <input id="anni" type="number" value="15" min="5" max="30">
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="calcola()">▶ Calcola e visualizza risultati</button>
+</section>
+
+<!-- ===================================================
+     TAB 4 – RISULTATI
+=================================================== -->
+<section id="tab-risultati" class="panel" role="tabpanel" aria-label="Risultati analisi">
+  <div id="risultati-content">
+    <div style="text-align:center; padding:48px 20px; color:var(--text-muted);">
+      Completa i dati nelle schede 1, 2 e 3, poi premi <strong>Calcola</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  Energy Tool Pro · uso professionale interno<br>
+  Conto Termico: D.M. 16/02/2016 (GSE) · Zone climatiche: D.P.R. 412/1993 ·
+  Diagnosi energetica: D.Lgs. 102/2014 · COP: EN 14511<br>
+  I calcoli sono indicativi e non sostituiscono perizia tecnica certificata.
+</footer>
+
+</div><!-- /wrapper -->
 </body>
 </html>
