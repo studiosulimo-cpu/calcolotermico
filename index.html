@@ -2,32 +2,41 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Energy Tool CT 3.0</title>
+<title>Energy Tool Pro</title>
 <script src="app.js" defer></script>
 
 <style>
 body { font-family: Arial; margin: 30px; background:#f4f6f8;}
 .box { background:white; padding:20px; margin-bottom:20px; border-radius:8px;}
 input, select { padding:6px; margin:5px;}
-button { padding:10px 20px; font-size:16px; cursor:pointer;}
-h2 { margin-bottom: 20px; }
+button { padding:10px 20px; font-size:16px;}
+.best { background:#d4edda; padding:10px; margin-bottom:10px;}
 </style>
-
 </head>
+
 <body>
 
-<h2>⚡ Energy Tool – Conto Termico PDC</h2>
+<h2>⚡ Energy Tool – Analisi Multi Scenario</h2>
 
 <div class="box">
-<h3>Dati impianto</h3>
+<h3>Dati edificio</h3>
 
-<label>Potenza PDC (kW)</label><br>
-<input id="potenza" type="number"><br>
+Superficie (m²)<br>
+<input id="sup"><br>
 
-<label>COP medio</label><br>
-<input id="cop" type="number" value="3.5"><br>
+Consumo gas (kWh)<br>
+<input id="gas"><br>
 
-<label>Zona climatica</label><br>
+Consumo elettrico (kWh)<br>
+<input id="ele"><br>
+
+Costo gas €/kWh<br>
+<input id="cgas" value="0.10"><br>
+
+Costo elettrico €/kWh<br>
+<input id="cele" value="0.25"><br>
+
+Zona climatica<br>
 <select id="zona">
 <option value="A">A</option>
 <option value="B">B</option>
@@ -35,32 +44,29 @@ h2 { margin-bottom: 20px; }
 <option value="D">D</option>
 <option value="E">E</option>
 <option value="F">F</option>
-</select><br>
-
-<label>Ore annue funzionamento</label><br>
-<input id="ore" type="number" value="1200"><br>
+</select>
 
 </div>
 
 <div class="box">
-<h3>Consumi edificio</h3>
+<h3>Impianti</h3>
 
-<label>Consumo gas (kWh)</label><br>
-<input id="gas" type="number"><br>
+Potenza (kW)<br>
+<input id="potenza"><br>
 
-<label>Costo gas (€/kWh)</label><br>
-<input id="cgas" type="number" step="0.01" value="0.10"><br>
+COP PDC<br>
+<input id="cop" value="3.5"><br>
 
-<label>Costo elettrico (€/kWh)</label><br>
-<input id="cele" type="number" step="0.01" value="0.25"><br>
+Ore annue<br>
+<input id="ore" value="1200"><br>
 
 </div>
 
-<button onclick="calcola()">Calcola</button>
+<button onclick="calcola()">Simula scenari</button>
 
 <div class="box">
 <h3>Risultati</h3>
-<div id="out">Inserisci i dati e calcola.</div>
+<div id="out"></div>
 </div>
 
 </body>
