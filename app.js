@@ -1,4 +1,67 @@
 // =======================
+// CONFIGURAZIONE BASE
+// =======================
+
+const coeffZona = {
+  A: 0.6,
+  B: 0.75,
+  C: 0.9,
+  D: 1.0,
+  E: 1.2,
+  F: 1.4
+};
+
+const Ce = 0.18; // €/kWh incentivo CT (tarabile)
+const CO2gas = 0.2;
+
+const tasso = 0.05;
+const anni = 10;
+
+
+// =======================
+// FUNZIONI CORE
+// =======================
+
+// Energia termica incentivata
+function energiaTermica(potenza, ore, zona) {
+  const k = coeffZona[zona] || 1;
+  return potenza * ore * k;
+}
+
+
+// Incentivo Conto Termico
+function incentivoCT(Q, cop) {
+  const fp = Math.min(cop / 2.5, 1.2);
+  return Q * Ce * fp;
+}
+
+
+// Consumi post intervento PDC
+function calcolaConsumi(gas, cop) {
+
+  const quotaSostituita = 0.8;
+
+  const gasPost = gas * (1 - quotaSostituita);
+
+  const energiaTermica = gas * quotaSostituita;
+
+  const consumoElettrico = energiaTermica / cop;
+
+  return {
+    gasPost: gasPost,
+    ele: consumoElettrico
+  };
+}
+
+
+// VAN
+function calcolaVAN(investimento, risparmio) {
+
+  let van = -investimento;
+
+  for (let t = 1; t <= anni; t++) {
+    van += risparmio / Math.pow(1 + tasso, t);
+// =======================
 // CONFIG
 // =======================
 
