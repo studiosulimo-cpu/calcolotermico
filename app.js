@@ -1,69 +1,44 @@
 // =======================
-// CONFIGURAZIONE BASE
+// CONFIG
 // =======================
 
-const coeffZona = {
-  A: 0.6,
-  B: 0.75,
-  C: 0.9,
-  D: 1.0,
-  E: 1.2,
-  F: 1.4
-};
-
-const Ce = 0.18; // €/kWh incentivo CT (tarabile)
-const CO2gas = 0.2;
-
-const tasso = 0.05;
-const anni = 10;
+const coeffZona = { A:0.6,B:0.75,C:0.9,D:1,E:1.2,F:1.4 };
+const Ce = 0.18;
 
 
 // =======================
-// FUNZIONI CORE
+// SCENARI
 // =======================
 
-// Energia termica incentivata
-function energiaTermica(potenza, ore, zona) {
-  const k = coeffZona[zona] || 1;
-  return potenza * ore * k;
+function scenarioBaseline(gas, ele, cgas, cele) {
+  return gas*cgas + ele*cele;
 }
 
-
-// Incentivo Conto Termico
-function incentivoCT(Q, cop) {
-  const fp = Math.min(cop / 2.5, 1.2);
-  return Q * Ce * fp;
+function scenarioCaldaia(gas, cgas) {
+  const consumo = gas * 0.8;
+  return consumo * cgas;
 }
 
+function scenarioPDC(gas, cgas, cele, cop, potenza, ore, zona) {
 
-// Consumi post intervento PDC
-function calcolaConsumi(gas, cop) {
+  const quota = 0.8;
 
-  const quotaSostituita = 0.8;
+  const gasPost = gas*(1-quota);
+  const elePost = (gas*quota)/cop;
 
-  const gasPost = gas * (1 - quotaSostituita);
+  const costo = gasPost*cgas + elePost*cele;
 
-  const energiaTermica = gas * quotaSostituita;
+  // incentivo
+  const Q = potenza * ore * coeffZona[zona];
+  const incentivo = Q * Ce * Math.min(cop/2.5,1.2);
 
-  const consumoElettrico = energiaTermica / cop;
+  const investimento = potenza * 1000;
 
-  return {
-    gasPost: gasPost,
-    ele: consumoElettrico
-  };
+  return { costo, incentivo, investimento };
 }
 
-
-// VAN
-function calcolaVAN(investimento, risparmio) {
-
-  let van = -investimento;
-
-  for (let t = 1; t <= anni; t++) {
-    van += risparmio / Math.pow(1 + tasso, t);
-  }
-
-  return van;
+function scenarioBiomassa(gas) {
+  return gas * 0.3 * 0.08;
 }
 
 
@@ -73,61 +48,77 @@ function calcolaVAN(investimento, risparmio) {
 
 function calcola() {
 
-  const potenza = parseFloat(document.getElementById("potenza").value);
-  const cop = parseFloat(document.getElementById("cop").value);
-  const zona = document.getElementById("zona").value;
-  const ore = parseFloat(document.getElementById("ore").value);
-
   const gas = parseFloat(document.getElementById("gas").value);
+  const ele = parseFloat(document.getElementById("ele").value);
+
   const cgas = parseFloat(document.getElementById("cgas").value);
   const cele = parseFloat(document.getElementById("cele").value);
 
-  // Validazione base
-  if (!potenza || !cop || !gas) {
-    document.getElementById("out").innerHTML =
-      "⚠️ Inserisci tutti i dati obbligatori";
-    return;
-  }
+  const potenza = parseFloat(document.getElementById("potenza").value);
+  const cop = parseFloat(document.getElementById("cop").value);
+  const ore = parseFloat(document.getElementById("ore").value);
+  const zona = document.getElementById("zona").value;
 
-  // Energia incentivata
-  const Q = energiaTermica(potenza, ore, zona);
+  let risultati = [];
 
-  // Incentivo CT
-  const incentivo = incentivoCT(Q, cop);
+  // baseline
+  const base = scenarioBaseline(gas, ele, cgas, cele);
 
-  // Consumi post intervento
-  const post = calcolaConsumi(gas, cop);
+  // caldaia
+  const caldaia = scenarioCaldaia(gas, cgas);
 
-  // Costi
-  const costoPre = gas * cgas;
-  const costoPost = post.gasPost * cgas + post.ele * cele;
+  risultati.push({
+    nome: "Caldaia condensazione",
+    costo: caldaia,
+    risparmio: base - caldaia,
+    payback: 2 // placeholder
+  });
 
-  const risparmio = costoPre - costoPost;
+  // PDC
+  const pdc = scenarioPDC(gas, cgas, cele, cop, potenza, ore, zona);
 
-  // Investimento stimato
-  const investimento = potenza * 1000;
+  const risparmioPDC = base - pdc.costo;
+  const netto = pdc.investimento - pdc.incentivo;
+  const paybackPDC = netto / risparmioPDC;
 
-  const investimentoNetto = investimento - incentivo;
+  risultati.push({
+    nome: "Pompa di Calore",
+    costo: pdc.costo,
+    risparmio: risparmioPDC,
+    payback: paybackPDC,
+    incentivo: pdc.incentivo
+  });
 
-  const payback = investimentoNetto / risparmio;
+  // biomassa
+  const bio = scenarioBiomassa(gas);
 
-  const van = calcolaVAN(investimentoNetto, risparmio);
+  risultati.push({
+    nome: "Biomassa",
+    costo: bio,
+    risparmio: base - bio,
+    payback: 4 // placeholder
+  });
 
-  // CO2 evitata
-  const co2 = (gas - post.gasPost) * CO2gas;
+  // RANKING (miglior payback)
+  risultati.sort((a,b) => a.payback - b.payback);
 
   // OUTPUT
-  document.getElementById("out").innerHTML = `
-    <b>Energia incentivata:</b> ${Q.toFixed(0)} kWh<br><br>
+  let html = "";
 
-    <b>Incentivo Conto Termico:</b> € ${incentivo.toFixed(0)}<br>
-    <b>Investimento stimato:</b> € ${investimento.toFixed(0)}<br>
-    <b>Investimento netto:</b> € ${investimentoNetto.toFixed(0)}<br><br>
+  html += `<div class="best"><b>MIGLIOR SOLUZIONE: ${risultati[0].nome}</b></div>`;
 
-    <b>Risparmio annuo:</b> € ${risparmio.toFixed(0)}<br>
-    <b>Payback:</b> ${payback.toFixed(1)} anni<br>
-    <b>VAN (10 anni):</b> € ${van.toFixed(0)}<br><br>
+  risultati.forEach(r => {
+    html += `
+      <p>
+        <b>${r.nome}</b><br>
+        Costo: € ${r.costo.toFixed(0)}<br>
+        Risparmio: € ${r.risparmio.toFixed(0)}<br>
+        Payback: ${r.payback.toFixed(1)} anni<br>
+        ${r.incentivo ? "Incentivo: € "+r.incentivo.toFixed(0) : ""}
+      </p>
+      <hr>
+    `;
+  });
 
-    <b>CO₂ evitata:</b> ${co2.toFixed(0)} kg/anno
-  `;
+  document.getElementById("out").innerHTML = html;
 }
